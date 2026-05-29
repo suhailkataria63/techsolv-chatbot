@@ -11,3 +11,5 @@ Chroma is planned for local development because it is simple to run locally and 
 For production, the vector store could move to Qdrant, Pinecone, or Postgres with pgvector depending on hosting, cost, and operational needs.
 
 Transcript extraction and metadata fetching should stay separate from the RAG logic. The extraction layer can deal with YouTube and Instagram quirks, while the RAG layer only needs normalized transcript chunks, metadata, and source references.
+
+That separation also leaves room for Instagram fallbacks and future background jobs. If extraction gets slow or needs cookies/auth handling, it can move behind a queue without changing how retrieval and chat consume the cleaned video data.

@@ -6,7 +6,7 @@ The finished version will accept one YouTube URL and one Instagram Reel URL, pul
 
 ## Current status
 
-Phase 1 scaffold. The repo has a small FastAPI backend with a health endpoint and the project notes needed before building extraction, storage, and chat features.
+Phase 2 backend extraction. The repo has a small FastAPI backend with health checks and a YouTube analysis endpoint. RAG storage, chat, Instagram support, and the frontend are still intentionally left out.
 
 ## Planned stack
 
@@ -15,7 +15,9 @@ Phase 1 scaffold. The repo has a small FastAPI backend with a health endpoint an
 - LangChain for the RAG chat flow
 - Chroma for local vector storage
 - OpenAI for embeddings and chat responses
-- YouTube and Instagram metadata/transcript extraction, added in a later phase
+- yt-dlp for YouTube metadata
+- youtube-transcript-api for YouTube transcripts
+- Instagram metadata/transcript extraction, added in a later phase
 
 ## Local backend setup
 
@@ -43,8 +45,30 @@ Expected response:
 }
 ```
 
+## Phase 2: YouTube analysis
+
+YouTube metadata is fetched with `yt-dlp` without downloading the video. Captions are fetched with `youtube-transcript-api` when they are available.
+
+Engagement rate is calculated as:
+
+```text
+(likes + comments) / views * 100
+```
+
+The result is rounded to 2 decimal places. If the view count is missing or zero, engagement rate is returned as `null`.
+
+Start the backend and test the endpoint:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/videos/youtube/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}'
+```
+
+The same endpoint is also available in Swagger at `http://127.0.0.1:8000/docs`.
+
 ## Notes
 
 Instagram extraction will need to be handled carefully later. Reels can behave differently depending on availability, region, cookies, and auth, so that part should have a fallback path instead of assuming one extractor will always work.
 
-No video extraction, RAG pipeline, frontend UI, or database logic is implemented yet.
+No RAG pipeline, frontend UI, Instagram extraction, or database logic is implemented yet.
