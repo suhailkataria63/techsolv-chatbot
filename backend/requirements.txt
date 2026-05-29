@@ -4,3 +4,5 @@ python-dotenv
 pydantic-settings
 yt-dlp
 youtube-transcript-api
+openai-whisper
+ffmpeg-python

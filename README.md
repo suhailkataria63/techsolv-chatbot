@@ -6,7 +6,7 @@ The finished version will accept one YouTube URL and one Instagram Reel URL, pul
 
 ## Current status
 
-Phase 2 backend extraction. The repo has a small FastAPI backend with health checks and a YouTube analysis endpoint. RAG storage, chat, Instagram support, and the frontend are still intentionally left out.
+Phase 3 backend extraction. The repo has a small FastAPI backend with health checks, YouTube analysis, and an Instagram Reel analysis endpoint. RAG storage, chat, and the frontend are still intentionally left out.
 
 ## Planned stack
 
@@ -17,7 +17,8 @@ Phase 2 backend extraction. The repo has a small FastAPI backend with health che
 - OpenAI for embeddings and chat responses
 - yt-dlp for YouTube metadata
 - youtube-transcript-api for YouTube transcripts
-- Instagram metadata/transcript extraction, added in a later phase
+- yt-dlp for Instagram metadata where public access works
+- Whisper for Instagram transcript fallback
 
 ## Local backend setup
 
@@ -57,6 +58,8 @@ Engagement rate is calculated as:
 
 The result is rounded to 2 decimal places. If the view count is missing or zero, engagement rate is returned as `null`.
 
+External platforms sometimes return inconsistent metadata types, so duration is normalized into whole seconds before the API returns it.
+
 Start the backend and test the endpoint:
 
 ```bash
@@ -67,8 +70,28 @@ curl -X POST http://127.0.0.1:8000/api/videos/youtube/analyze \
 
 The same endpoint is also available in Swagger at `http://127.0.0.1:8000/docs`.
 
+## Phase 3: Instagram Reel analysis
+
+Instagram metadata is fetched with `yt-dlp`. Some public Reels work without extra setup, but Instagram often blocks scraping or asks for login, so this endpoint returns a clean `400` if metadata cannot be fetched.
+
+If audio can be downloaded, Whisper is used as a transcript fallback. If audio download or transcription fails, the API still returns the metadata it found with an empty transcript and `transcript_source` set to `"unavailable"`.
+
+To use cookies, set this in `backend/.env`:
+
+```bash
+INSTAGRAM_COOKIES_FILE=/path/to/instagram-cookies.txt
+```
+
+Test the endpoint with a public Reel URL:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/videos/instagram/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://www.instagram.com/reel/SHORTCODE/"}'
+```
+
 ## Notes
 
-Instagram extraction will need to be handled carefully later. Reels can behave differently depending on availability, region, cookies, and auth, so that part should have a fallback path instead of assuming one extractor will always work.
+Instagram extraction needs to be handled carefully. Reels can behave differently depending on availability, region, cookies, and auth, so this code treats extraction as best effort instead of assuming one path will always work.
 
-No RAG pipeline, frontend UI, Instagram extraction, or database logic is implemented yet.
+No RAG pipeline, frontend UI, or database logic is implemented yet.

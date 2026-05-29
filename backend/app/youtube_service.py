@@ -5,7 +5,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from yt_dlp import YoutubeDL
 
 from .models import VideoAnalysisResponse
-from .video_metrics import calculate_engagement_rate
+from .video_metrics import calculate_engagement_rate, normalize_duration_seconds
 
 
 def extract_youtube_video_id(url: str) -> str:
@@ -91,7 +91,7 @@ def analyze_youtube_video(url: str) -> VideoAnalysisResponse:
     likes = metadata.get("like_count")
     comments = metadata.get("comment_count")
     upload_date = _normalize_upload_date(metadata.get("upload_date"))
-    duration_seconds = metadata.get("duration")
+    duration_seconds = normalize_duration_seconds(metadata.get("duration"))
     transcript, transcript_source = fetch_youtube_transcript(video_id)
 
     return VideoAnalysisResponse(

@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     google_api_key: str = ""
     chroma_dir: str = "./storage/chroma"
+    instagram_cookies_file: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
