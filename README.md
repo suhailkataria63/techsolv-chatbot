@@ -48,6 +48,31 @@ Expected response:
 }
 ```
 
+## Local frontend setup
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+The backend runs on `http://127.0.0.1:8000`. The frontend usually runs on `http://localhost:3000`, but Next.js may use `3001` if `3000` is busy. CORS is enabled for local development on both `localhost` and `127.0.0.1` for ports `3000` and `3001`.
+
+The frontend expects the backend at `NEXT_PUBLIC_API_BASE_URL`, which defaults to `http://127.0.0.1:8000`.
+
+For local development, run the backend and frontend in separate terminals:
+
+```bash
+cd backend
+uvicorn app.main:app --reload
+```
+
+```bash
+cd frontend
+npm run dev
+```
+
 ## Phase 2: YouTube analysis
 
 YouTube metadata is fetched with `yt-dlp` without downloading the video. Captions are fetched with `youtube-transcript-api` when they are available.
