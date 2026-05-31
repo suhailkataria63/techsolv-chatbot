@@ -83,7 +83,7 @@ export default function Home() {
             <ComparisonPanel comparison={comparison} />
           </div>
 
-          <ChatPanel />
+          <ChatPanel workspaceId={workspace?.workspace_id} />
         </div>
       </div>
     </main>

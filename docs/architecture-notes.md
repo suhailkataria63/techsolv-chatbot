@@ -16,9 +16,19 @@ Transcript chunking uses `RecursiveCharacterTextSplitter` with 700-character chu
 
 Embeddings use `text-embedding-3-small` because transcript chunks are short and cost matters during repeated testing. If retrieval quality becomes the bottleneck later, this can be swapped without changing the extraction layer.
 
+AI providers are configurable so the project can run in different environments. HuggingFace embeddings plus Ollama chat are the default local path because they avoid per-call costs and keep development independent of hosted APIs. Gemini is useful for Loom/demo mode because it gives hosted model quality with less local setup. OpenAI remains available as an optional provider.
+
+Embedding provider changes require rebuilding the vector store. Vectors from HuggingFace, Gemini, and OpenAI live in different embedding spaces, so `backend/storage/chroma` should be deleted and videos should be re-analyzed after switching providers.
+
+Managed providers are still useful in production for latency, reliability, observability, and avoiding local model operations. The tradeoff is cost and external dependency risk, so provider errors are surfaced explicitly instead of being framed as generic OpenAI failures.
+
 Retrieval is kept separate from answer generation so each piece can fail or change independently. The retriever only knows how to find relevant chunks; the chat service decides how to use those chunks, recent memory, and the model response.
 
 Citations come directly from chunk metadata written during ingestion. That keeps citations tied to stored transcript chunks instead of asking the model to invent source references.
+
+Semantic search alone is weak for UI labels such as `Video A`, `Video B`, or a creator name that may only exist in metadata. Metadata-aware retrieval resolves those labels to the workspace video ids first, then filters Chroma by `video_id` before searching. Summary questions use broader ordered chunk retrieval because a good summary needs coverage across the transcript, not just the single most semantically similar chunk.
+
+Workspace metadata is included in the chat prompt alongside retrieved chunks. Transcripts answer "what was said"; metadata answers "who posted it", "when was it uploaded", "how many views/likes/comments it has", and "how well it performed". That split improves creator, engagement, and Video A/B questions without asking the model to infer metadata from transcript text.
 
 Chat memory is in-memory for now because it is enough to prove session behavior in local development. A production version should move this to Redis or Postgres so history survives restarts, can expire cleanly, and can be shared across workers.
 

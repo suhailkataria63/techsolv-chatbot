@@ -3,7 +3,7 @@ from pathlib import Path
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 
-from .embeddings import get_embedding_model
+from .embeddings import get_embedding_model, get_embedding_setup_error
 
 
 COLLECTION_NAME = "social_videos"
@@ -13,7 +13,7 @@ CHROMA_DIR = Path(__file__).resolve().parents[2] / "storage" / "chroma"
 def get_vector_store() -> Chroma:
     embedding_model = get_embedding_model()
     if embedding_model is None:
-        raise ValueError("Missing OPENAI_API_KEY")
+        raise ValueError(get_embedding_setup_error())
 
     CHROMA_DIR.mkdir(parents=True, exist_ok=True)
 

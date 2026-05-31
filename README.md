@@ -73,6 +73,40 @@ cd frontend
 npm run dev
 ```
 
+## AI provider setup
+
+The backend can run without OpenAI. Pick one mode in `backend/.env`.
+
+Local free mode uses HuggingFace embeddings and Ollama chat:
+
+```bash
+EMBEDDING_PROVIDER=huggingface
+LLM_PROVIDER=ollama
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+OLLAMA_MODEL=llama3.1:8b
+OLLAMA_BASE_URL=http://localhost:11434
+```
+
+Make sure Ollama is running locally and the model is pulled:
+
+```bash
+ollama pull llama3.1:8b
+```
+
+Gemini demo mode uses hosted Gemini embeddings and chat:
+
+```bash
+EMBEDDING_PROVIDER=gemini
+LLM_PROVIDER=gemini
+GOOGLE_API_KEY=your_key_here
+GEMINI_EMBEDDING_MODEL=gemini-embedding-001
+GEMINI_LLM_MODEL=gemini-2.5-flash
+```
+
+OpenAI is still supported by setting `EMBEDDING_PROVIDER=openai` and/or `LLM_PROVIDER=openai` with `OPENAI_API_KEY`.
+
+When switching embedding providers, delete `backend/storage/chroma` and re-analyze videos. Chroma collections should not mix vectors created by different embedding models.
+
 ## Phase 2: YouTube analysis
 
 YouTube metadata is fetched with `yt-dlp` without downloading the video. Captions are fetched with `youtube-transcript-api` when they are available.
@@ -158,7 +192,11 @@ This keeps the current API useful during local setup, provider outages, and part
 
 The chat endpoint retrieves relevant transcript chunks from Chroma and answers from those chunks with citations. Analyze at least one video first so transcript chunks exist in `backend/storage/chroma`.
 
-`OPENAI_API_KEY` is needed for retrieval embeddings and chat generation.
+Configure the selected embedding and chat providers before using retrieval chat. Local mode uses HuggingFace embeddings and Ollama; Gemini mode needs `GOOGLE_API_KEY`.
+
+Chat supports video-specific questions through metadata-aware retrieval. In workspace sessions, `Video A` and `Video B` map to the stored workspace videos, so prompts like `Summarize Video A` or `What is the main topic of Video B?` retrieve chunks from the right video instead of searching for those UI labels inside transcript text.
+
+Chat prompts include both transcript chunks and workspace metadata. Transcripts answer what was said, while metadata handles identity and metrics such as creator, title, platform, views, likes, comments, engagement rate, and transcript availability.
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/chat/query \

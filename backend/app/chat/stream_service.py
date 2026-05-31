@@ -1,66 +1,73 @@
-import os
-
-from langchain_openai import ChatOpenAI
-
-from .chat_service import _format_context, _format_history
+from .chat_service import (
+    build_grounded_prompt,
+    get_chunks_for_message,
+    get_chat_model,
+    get_llm_setup_error,
+    provider_runtime_error,
+)
 from .memory import add_message, get_recent_history
-from .retriever import retrieve_relevant_chunks
+from ..workspace.video_registry import get_workspace
 
 
 NO_CONTEXT_STREAM_MESSAGE = (
     "I do not have transcript chunks to search yet. Analyze videos first, then ask again."
 )
 
-NO_KEY_STREAM_MESSAGE = (
-    "Chat streaming needs OPENAI_API_KEY because retrieval and LLM response generation "
-    "depend on embeddings/chat model."
-)
-
 
 def stream_answer(session_id: str, message: str):
     try:
         history = get_recent_history(session_id)
-        chunks = retrieve_relevant_chunks(message)
+        stored_workspace = get_workspace(session_id)
+        workspace = (
+            {
+                "workspace_id": session_id,
+                **stored_workspace,
+            }
+            if stored_workspace
+            else None
+        )
+        setup_error = get_llm_setup_error()
 
-        if not chunks:
+        if setup_error:
+            yield setup_error
+            add_message(session_id, "user", message)
+            add_message(session_id, "assistant", setup_error)
+            return
+
+        chunks = get_chunks_for_message(session_id, message)
+
+        if not chunks and not workspace:
             yield NO_CONTEXT_STREAM_MESSAGE
             add_message(session_id, "user", message)
             add_message(session_id, "assistant", NO_CONTEXT_STREAM_MESSAGE)
             return
 
-        if not os.getenv("OPENAI_API_KEY"):
-            yield NO_KEY_STREAM_MESSAGE
+        prompt = build_grounded_prompt(history, chunks, message, workspace)
+
+        model = get_chat_model(streaming=True)
+        if model is None:
+            error = get_llm_setup_error() or "Chat model is unavailable."
+            yield error
             add_message(session_id, "user", message)
-            add_message(session_id, "assistant", NO_KEY_STREAM_MESSAGE)
+            add_message(session_id, "assistant", error)
             return
 
-        prompt = f"""
-You are answering questions about social video transcripts.
-
-Use only the retrieved transcript context below. If the context does not contain
-the answer, say that the available transcript chunks do not answer the question.
-When you use a source, cite it inline using its Source value, such as [video_id#0].
-
-Recent conversation:
-{_format_history(history)}
-
-Retrieved transcript context:
-{_format_context(chunks)}
-
-User question:
-{message}
-""".strip()
-
-        model = ChatOpenAI(model="gpt-4o-mini", temperature=0.2, streaming=True)
         answer_parts = []
 
-        for chunk in model.stream(prompt):
-            token = chunk.content if isinstance(chunk.content, str) else str(chunk.content)
-            if not token:
-                continue
+        try:
+            for chunk in model.stream(prompt):
+                token = chunk.content if isinstance(chunk.content, str) else str(chunk.content)
+                if not token:
+                    continue
 
-            answer_parts.append(token)
-            yield token
+                answer_parts.append(token)
+                yield token
+        except Exception as exc:
+            error = provider_runtime_error(exc)
+            yield error
+            add_message(session_id, "user", message)
+            add_message(session_id, "assistant", error)
+            return
 
         answer = "".join(answer_parts)
         add_message(session_id, "user", message)

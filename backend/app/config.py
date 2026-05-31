@@ -14,8 +14,15 @@ DEFAULT_CORS_ORIGINS = ",".join(
 class Settings(BaseSettings):
     app_name: str = "social-video-rag-api"
     env: str = "development"
+    embedding_provider: str = "huggingface"
+    llm_provider: str = "ollama"
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    ollama_model: str = "llama3.1:8b"
+    ollama_base_url: str = "http://localhost:11434"
     openai_api_key: str = ""
     google_api_key: str = ""
+    gemini_embedding_model: str = "gemini-embedding-001"
+    gemini_llm_model: str = "gemini-2.5-flash"
     chroma_dir: str = "./storage/chroma"
     instagram_cookies_file: str = ""
     cors_origins: str = DEFAULT_CORS_ORIGINS

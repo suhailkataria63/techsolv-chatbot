@@ -10,3 +10,7 @@ langchain
 langchain-openai
 langchain-community
 chromadb
+langchain-huggingface
+langchain-ollama
+langchain-google-genai
+sentence-transformers
