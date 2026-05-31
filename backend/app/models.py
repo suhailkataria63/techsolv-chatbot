@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -10,6 +10,17 @@ class VideoUrlRequest(BaseModel):
 class ChatRequest(BaseModel):
     session_id: str
     message: str
+
+
+class WorkspaceRequest(BaseModel):
+    video_a_url: str
+    video_b_url: str
+
+
+class WorkspaceResponse(BaseModel):
+    workspace_id: str
+    video_a: dict[str, Any]
+    video_b: dict[str, Any]
 
 
 class Citation(BaseModel):

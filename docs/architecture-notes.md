@@ -26,6 +26,10 @@ Streaming chat improves perceived latency because the user sees the answer as it
 
 For streaming, memory is updated after the stream completes. That avoids storing partial assistant messages if generation is interrupted halfway through.
 
+The comparison workspace exists so the app can treat Video A and Video B as a pair after extraction. Comparison workflows should not repeatedly re-fetch the same URLs just to render metadata, calculate differences, or build follow-up prompts.
+
+Workspace storage is in-memory for now, matching the current chat memory approach. A production version should move workspaces into Postgres or another durable store, especially if users need to return to a comparison later or share it.
+
 At larger scale, ingestion should move out of the request cycle into a background job. The API can return an accepted analysis result, then a queue worker can chunk, embed, retry failures, and write to a managed vector store.
 
 The ingestion path is deliberately non-blocking from the user's point of view. External AI providers, local vector stores, and API keys are all failure points, so the app should keep metadata/transcript extraction useful even when embeddings are down.

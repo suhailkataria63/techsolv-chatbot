@@ -177,6 +177,37 @@ curl -N -X POST http://127.0.0.1:8000/api/chat/stream \
 
 The frontend will consume this later with `fetch` streaming. The streaming endpoint sends plain answer text only; citation objects stay on the non-streaming endpoint for now.
 
+## Comparison workspace
+
+The workspace endpoint analyzes two videos and stores them as Video A and Video B for comparison flows. It supports YouTube and Instagram combinations, including YouTube vs YouTube, YouTube vs Instagram, and Instagram vs Instagram.
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/workspace/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_a_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "video_b_url": "https://www.instagram.com/reel/SHORTCODE/"
+  }'
+```
+
+Response shape:
+
+```json
+{
+  "workspace_id": "...",
+  "video_a": {},
+  "video_b": {}
+}
+```
+
+Fetch a stored workspace:
+
+```bash
+curl http://127.0.0.1:8000/api/workspace/WORKSPACE_ID
+```
+
+Workspaces are in-memory for now, so they reset when the backend restarts.
+
 ## Notes
 
 Instagram extraction needs to be handled carefully. Reels can behave differently depending on availability, region, cookies, and auth, so this code treats extraction as best effort instead of assuming one path will always work.
