@@ -6,3 +6,7 @@ yt-dlp
 youtube-transcript-api
 openai-whisper
 ffmpeg-python
+langchain
+langchain-openai
+langchain-community
+chromadb

@@ -6,7 +6,7 @@ The finished version will accept one YouTube URL and one Instagram Reel URL, pul
 
 ## Current status
 
-Phase 3 backend extraction. The repo has a small FastAPI backend with health checks, YouTube analysis, and an Instagram Reel analysis endpoint. RAG storage, chat, and the frontend are still intentionally left out.
+Phase 5 retrieval chat. The repo has a small FastAPI backend with health checks, YouTube analysis, Instagram Reel analysis, transcript ingestion into Chroma, and a basic RAG chat endpoint with citations. The frontend is still intentionally left out.
 
 ## Planned stack
 
@@ -19,6 +19,8 @@ Phase 3 backend extraction. The repo has a small FastAPI backend with health che
 - youtube-transcript-api for YouTube transcripts
 - yt-dlp for Instagram metadata where public access works
 - Whisper for Instagram transcript fallback
+- LangChain for transcript chunking and ingestion
+- ChromaDB for local persistent vector storage
 
 ## Local backend setup
 
@@ -90,8 +92,93 @@ curl -X POST http://127.0.0.1:8000/api/videos/instagram/analyze \
   -d '{"url":"https://www.instagram.com/reel/SHORTCODE/"}'
 ```
 
+## Phase 4: RAG ingestion
+
+When an analysis endpoint returns transcript text, the backend splits it into overlapping chunks and stores those chunks in ChromaDB under the `social_videos` collection. Chroma was picked for local development because it persists to disk and does not require another service while the retrieval flow is still being built.
+
+Chunking uses LangChain's `RecursiveCharacterTextSplitter` with `chunk_size=700` and `chunk_overlap=120`. That keeps chunks large enough to preserve context, while the overlap helps avoid losing meaning at chunk boundaries.
+
+Embeddings use OpenAI's `text-embedding-3-small` model. It is a practical default for this phase because it is inexpensive, fast enough for short transcripts, and easy to swap later if the storage layer changes.
+
+Set `OPENAI_API_KEY` in `backend/.env` before testing ingestion:
+
+```bash
+OPENAI_API_KEY=your_key_here
+```
+
+Analysis responses include ingestion status separately from extraction:
+
+```json
+"rag_ingestion": {
+  "status": "success",
+  "stored_chunks": 8,
+  "collection_name": "social_videos",
+  "error": null
+}
+```
+
+If embeddings are not configured or Chroma fails, the endpoint can still return the extracted metadata and transcript with `"status": "failed"`. If no transcript is available, ingestion returns `"status": "skipped"`.
+
+Local vectors are stored under `backend/storage/chroma`.
+
+## Graceful degradation strategy
+
+Metadata and transcript extraction run independently from vector ingestion. That means a YouTube or Instagram analysis can still return useful data even when optional AI infrastructure is missing.
+
+Embeddings are treated as infrastructure, not as a requirement for extraction. If `OPENAI_API_KEY` is missing or the vector store cannot write, the API includes a `rag_ingestion` failure object instead of failing the whole request.
+
+This keeps the current API useful during local setup, provider outages, and partial deployments. The chat layer can later decide whether to rely on stored chunks or ask the user to retry ingestion.
+
+## Phase 5: Chat with citations
+
+The chat endpoint retrieves relevant transcript chunks from Chroma and answers from those chunks with citations. Analyze at least one video first so transcript chunks exist in `backend/storage/chroma`.
+
+`OPENAI_API_KEY` is needed for retrieval embeddings and chat generation.
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/chat/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "demo-session",
+    "message": "What is the main point of the video?"
+  }'
+```
+
+Response shape:
+
+```json
+{
+  "session_id": "demo-session",
+  "answer": "...",
+  "citations": [
+    {
+      "video_id": "...",
+      "platform": "youtube",
+      "creator": "...",
+      "chunk_index": 0,
+      "source_url": "..."
+    }
+  ]
+}
+```
+
+If no chunks are available yet, the endpoint returns a helpful message instead of crashing.
+
+For streamed answer text, use:
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/api/chat/stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "demo-session",
+    "message": "What is the main point of the video?"
+  }'
+```
+
+The frontend will consume this later with `fetch` streaming. The streaming endpoint sends plain answer text only; citation objects stay on the non-streaming endpoint for now.
+
 ## Notes
 
 Instagram extraction needs to be handled carefully. Reels can behave differently depending on availability, region, cookies, and auth, so this code treats extraction as best effort instead of assuming one path will always work.
 
-No RAG pipeline, frontend UI, or database logic is implemented yet.
+The current chat work uses in-memory session history. Persistent chat memory still needs to be added.
