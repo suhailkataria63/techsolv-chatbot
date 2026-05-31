@@ -23,6 +23,17 @@ class WorkspaceResponse(BaseModel):
     video_b: dict[str, Any]
 
 
+class ComparisonResponse(BaseModel):
+    workspace_id: str
+    winner: str
+    score_a: float
+    score_b: float
+    comparison_summary: str
+    strengths_video_a: list[str]
+    strengths_video_b: list[str]
+    improvement_suggestions: list[str]
+
+
 class Citation(BaseModel):
     video_id: str | None
     platform: str | None

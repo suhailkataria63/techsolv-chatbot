@@ -30,6 +30,10 @@ The comparison workspace exists so the app can treat Video A and Video B as a pa
 
 Workspace storage is in-memory for now, matching the current chat memory approach. A production version should move workspaces into Postgres or another durable store, especially if users need to return to a comparison later or share it.
 
+The comparison engine is deterministic for now. Engagement rate is weighted most heavily because it normalizes interaction against reach, while likes, comments, and views provide medium-strength popularity signals. Hashtag count and transcript length are minor signals because they can help explain discoverability and content depth, but they should not overpower actual audience response.
+
+Missing metrics are treated as zero contribution rather than errors. That matters for Instagram because public extraction can return partial metadata depending on access, cookies, and platform behavior.
+
 At larger scale, ingestion should move out of the request cycle into a background job. The API can return an accepted analysis result, then a queue worker can chunk, embed, retry failures, and write to a managed vector store.
 
 The ingestion path is deliberately non-blocking from the user's point of view. External AI providers, local vector stores, and API keys are all failure points, so the app should keep metadata/transcript extraction useful even when embeddings are down.

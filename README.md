@@ -206,6 +206,14 @@ Fetch a stored workspace:
 curl http://127.0.0.1:8000/api/workspace/WORKSPACE_ID
 ```
 
+Compare the stored videos:
+
+```bash
+curl http://127.0.0.1:8000/api/workspace/WORKSPACE_ID/compare
+```
+
+The comparison response includes a winner, both scores, strengths for each video, and improvement suggestions. It uses available metadata only, so missing Instagram metrics do not break the report.
+
 Workspaces are in-memory for now, so they reset when the backend restarts.
 
 ## Notes

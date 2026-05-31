@@ -3,11 +3,13 @@ from fastapi.responses import StreamingResponse
 
 from .chat.chat_service import answer_question
 from .chat.stream_service import stream_answer
+from .comparison.comparison_service import compare_workspace
 from .config import settings
 from .instagram_service import analyze_instagram_reel
 from .models import (
     ChatRequest,
     ChatResponse,
+    ComparisonResponse,
     VideoAnalysisResponse,
     VideoUrlRequest,
     WorkspaceRequest,
@@ -110,3 +112,16 @@ def get_workspace_endpoint(workspace_id: str) -> dict:
         "workspace_id": workspace_id,
         **workspace,
     }
+
+
+@app.get("/api/workspace/{workspace_id}/compare", response_model=ComparisonResponse)
+def compare_workspace_endpoint(workspace_id: str) -> ComparisonResponse:
+    workspace = get_workspace(workspace_id)
+    if workspace is None:
+        raise HTTPException(status_code=404, detail="Workspace not found.")
+
+    comparison = compare_workspace(workspace)
+    return ComparisonResponse(
+        workspace_id=workspace_id,
+        **comparison,
+    )
