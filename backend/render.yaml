@@ -2,9 +2,11 @@ services:
   - type: web
     name: social-video-rag-api
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.render.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: DEPLOYMENT_MODE
+        value: render
       - key: ENV
         value: production
       - key: EMBEDDING_PROVIDER
@@ -13,3 +15,5 @@ services:
         value: gemini
       - key: CHROMA_DIR
         value: ./storage/chroma
+      - key: GOOGLE_API_KEY
+        sync: false

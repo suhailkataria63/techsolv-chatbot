@@ -1,7 +1,3 @@
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_openai import OpenAIEmbeddings
-
 from ..config import settings
 
 
@@ -9,10 +5,20 @@ def get_embedding_model():
     provider = settings.embedding_provider.lower()
 
     if provider == "huggingface":
+        try:
+            from langchain_huggingface import HuggingFaceEmbeddings
+        except ImportError:
+            return None
+
         return HuggingFaceEmbeddings(model_name=settings.embedding_model)
 
     if provider == "gemini":
         if not settings.google_api_key:
+            return None
+
+        try:
+            from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        except ImportError:
             return None
 
         return GoogleGenerativeAIEmbeddings(
@@ -22,6 +28,11 @@ def get_embedding_model():
 
     if provider == "openai":
         if not settings.openai_api_key:
+            return None
+
+        try:
+            from langchain_openai import OpenAIEmbeddings
+        except ImportError:
             return None
 
         return OpenAIEmbeddings(model="text-embedding-3-small")

@@ -203,7 +203,8 @@ The backend can be deployed as a Render web service from `backend/`.
 Render settings:
 
 ```text
-Build command: pip install -r requirements.txt
+Root Directory: backend
+Build command: pip install -r requirements.render.txt
 Start command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
@@ -216,6 +217,7 @@ uvicorn app.main:app --reload
 Set backend environment variables in Render:
 
 ```env
+DEPLOYMENT_MODE=render
 ENV=production
 EMBEDDING_PROVIDER=gemini
 LLM_PROVIDER=gemini
@@ -225,6 +227,8 @@ GEMINI_LLM_MODEL=gemini-2.5-flash
 CHROMA_DIR=./storage/chroma
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001,https://your-vercel-app.vercel.app
 ```
+
+Render should install from `requirements.render.txt`, not the local `requirements.txt`. The Render file intentionally excludes local-only heavy packages such as `sentence-transformers`, `langchain-huggingface`, `langchain-ollama`, `openai-whisper`, and `torch` so the backend can stay under free-tier memory limits. Local development can still use `backend/requirements.txt`.
 
 `INSTAGRAM_COOKIES_FILE` is optional and only needed if you add cookie-based Instagram extraction later. Do not commit API keys or cookie files.
 

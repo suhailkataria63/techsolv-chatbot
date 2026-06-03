@@ -1,10 +1,6 @@
 import re
 import logging
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
-
 from ..config import settings
 from ..models import ChatResponse, Citation
 from ..workspace.video_registry import get_workspace
@@ -51,6 +47,11 @@ def get_chat_model(streaming: bool = False):
     provider = settings.llm_provider.lower()
 
     if provider == "ollama":
+        try:
+            from langchain_ollama import ChatOllama
+        except ImportError:
+            return None
+
         return ChatOllama(
             model=settings.ollama_model,
             base_url=settings.ollama_base_url,
@@ -59,6 +60,11 @@ def get_chat_model(streaming: bool = False):
 
     if provider == "gemini":
         if not settings.google_api_key:
+            return None
+
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+        except ImportError:
             return None
 
         return ChatGoogleGenerativeAI(
@@ -70,6 +76,11 @@ def get_chat_model(streaming: bool = False):
 
     if provider == "openai":
         if not settings.openai_api_key:
+            return None
+
+        try:
+            from langchain_openai import ChatOpenAI
+        except ImportError:
             return None
 
         return ChatOpenAI(model="gpt-4o-mini", temperature=0.2, streaming=streaming)

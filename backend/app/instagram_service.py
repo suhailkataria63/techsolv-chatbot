@@ -1,3 +1,4 @@
+import logging
 import re
 from pathlib import Path
 from urllib.parse import urlparse
@@ -7,6 +8,9 @@ from yt_dlp import YoutubeDL
 from .config import settings
 from .models import VideoAnalysisResponse
 from .video_metrics import calculate_engagement_rate, normalize_duration_seconds
+
+
+logger = logging.getLogger(__name__)
 
 
 def extract_instagram_shortcode(url: str) -> str:
@@ -106,12 +110,17 @@ def download_instagram_audio(url: str, output_dir: str = "storage/audio") -> str
 def transcribe_audio_with_whisper(audio_path: str) -> tuple[str, str]:
     try:
         import whisper
+    except ImportError:
+        logger.warning("Whisper is not installed; Instagram transcript fallback skipped.")
+        return "", "unavailable"
 
+    try:
         model = whisper.load_model("base")
         result = model.transcribe(audio_path)
         transcript = str(result.get("text", "")).strip()
         return transcript, "whisper" if transcript else "unavailable"
-    except Exception:
+    except Exception as exc:
+        logger.warning("Whisper transcription failed: %s", exc)
         return "", "unavailable"
 
 

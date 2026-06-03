@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic-settings
+yt-dlp
+youtube-transcript-api
+ffmpeg-python
+langchain
+langchain-community
+langchain-google-genai
+chromadb
