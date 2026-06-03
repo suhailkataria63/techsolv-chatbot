@@ -1,12 +1,12 @@
 from .chat_service import (
+    INSUFFICIENT_CONTEXT_ANSWER,
     build_grounded_prompt,
-    get_chunks_for_message,
+    get_chat_context,
     get_chat_model,
     get_llm_setup_error,
     provider_runtime_error,
 )
 from .memory import add_message, get_recent_history
-from ..workspace.video_registry import get_workspace
 
 
 NO_CONTEXT_STREAM_MESSAGE = (
@@ -17,15 +17,6 @@ NO_CONTEXT_STREAM_MESSAGE = (
 def stream_answer(session_id: str, message: str):
     try:
         history = get_recent_history(session_id)
-        stored_workspace = get_workspace(session_id)
-        workspace = (
-            {
-                "workspace_id": session_id,
-                **stored_workspace,
-            }
-            if stored_workspace
-            else None
-        )
         setup_error = get_llm_setup_error()
 
         if setup_error:
@@ -34,7 +25,16 @@ def stream_answer(session_id: str, message: str):
             add_message(session_id, "assistant", setup_error)
             return
 
-        chunks = get_chunks_for_message(session_id, message)
+        workspace, chunks, summary_mode, position_mode = get_chat_context(
+            session_id,
+            message,
+        )
+
+        if summary_mode and not chunks:
+            yield INSUFFICIENT_CONTEXT_ANSWER
+            add_message(session_id, "user", message)
+            add_message(session_id, "assistant", INSUFFICIENT_CONTEXT_ANSWER)
+            return
 
         if not chunks and not workspace:
             yield NO_CONTEXT_STREAM_MESSAGE
@@ -42,7 +42,14 @@ def stream_answer(session_id: str, message: str):
             add_message(session_id, "assistant", NO_CONTEXT_STREAM_MESSAGE)
             return
 
-        prompt = build_grounded_prompt(history, chunks, message, workspace)
+        prompt = build_grounded_prompt(
+            history,
+            chunks,
+            message,
+            workspace,
+            summary_mode=summary_mode,
+            position_mode=position_mode,
+        )
 
         model = get_chat_model(streaming=True)
         if model is None:

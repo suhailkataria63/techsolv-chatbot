@@ -86,6 +86,31 @@ def retrieve_chunks_by_video_id(video_id: str, k: int = 12) -> list[dict]:
     return chunks[:k]
 
 
+def get_positioned_chunks(
+    video_id: str,
+    position: str,
+    window: int = 3,
+) -> list[dict]:
+    chunks = retrieve_chunks_by_video_id(video_id, k=1000)
+    if not chunks:
+        return []
+
+    if position == "beginning":
+        return chunks[:window]
+
+    if position == "end":
+        return chunks[-window:]
+
+    if position == "middle":
+        middle_index = len(chunks) // 2
+        start = max(0, middle_index - window // 2)
+        end = min(len(chunks), start + window)
+        start = max(0, end - window)
+        return chunks[start:end]
+
+    return []
+
+
 def retrieve_chunks_by_video_label(
     video_label: str,
     workspace: dict | None = None,

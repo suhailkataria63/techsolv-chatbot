@@ -198,6 +198,12 @@ Chat supports video-specific questions through metadata-aware retrieval. In work
 
 Chat prompts include both transcript chunks and workspace metadata. Transcripts answer what was said, while metadata handles identity and metrics such as creator, title, platform, views, likes, comments, engagement rate, and transcript availability.
 
+The chat prompt uses workspace metadata for identity/performance questions and transcript chunks for spoken-content questions.
+
+Chat also supports position-aware retrieval for hooks, intros, beginnings, middles, and endings. Those questions use transcript chunk order instead of semantic search, which keeps opening-hook questions tied to the start of the video.
+
+The assistant is strict retrieval-grounded: it should only answer from workspace metadata and retrieved transcript chunks, not outside knowledge.
+
 ```bash
 curl -X POST http://127.0.0.1:8000/api/chat/query \
   -H "Content-Type: application/json" \

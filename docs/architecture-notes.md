@@ -30,6 +30,12 @@ Semantic search alone is weak for UI labels such as `Video A`, `Video B`, or a c
 
 Workspace metadata is included in the chat prompt alongside retrieved chunks. Transcripts answer "what was said"; metadata answers "who posted it", "when was it uploaded", "how many views/likes/comments it has", and "how well it performed". That split improves creator, engagement, and Video A/B questions without asking the model to infer metadata from transcript text.
 
+Final prompt tuning is important because retrieved chunks are already scoped to the relevant video. The model should not falsely refuse just because a speaker name or `Video A` label is absent from the transcript text. Metadata resolves names and Video A/B labels, while transcript chunks provide the spoken evidence.
+
+The final chat prompt is strict retrieval-grounded. It explicitly blocks general knowledge and outside assumptions so celebrity, show, company, or product facts are only used if they appear in workspace metadata or retrieved transcript chunks.
+
+Position-specific questions are routed by chunk order instead of semantic similarity. Semantic search is useful for topics, but it can pick a late chunk for a question about the opening if the wording happens to match. Beginning, hook, intro, middle, and ending questions use `chunk_index`, which also makes first-five-seconds hook comparisons more reliable.
+
 Chat memory is in-memory for now because it is enough to prove session behavior in local development. A production version should move this to Redis or Postgres so history survives restarts, can expire cleanly, and can be shared across workers.
 
 Streaming chat improves perceived latency because the user sees the answer as it is generated instead of waiting for the full response. The non-streaming endpoint is still useful for debugging, tests, and clients that want structured citations in the same response body.
