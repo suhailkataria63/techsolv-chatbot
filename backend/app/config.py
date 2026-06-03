@@ -14,6 +14,7 @@ DEFAULT_CORS_ORIGINS = ",".join(
 class Settings(BaseSettings):
     app_name: str = "social-video-rag-api"
     env: str = "development"
+    port: int = 8000
     embedding_provider: str = "huggingface"
     llm_provider: str = "ollama"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"

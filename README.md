@@ -194,6 +194,69 @@ OLLAMA_MODEL=llama3.2:3b
 
 ---
 
+## Deployment
+
+### Backend on Render
+
+The backend can be deployed as a Render web service from `backend/`.
+
+Render settings:
+
+```text
+Build command: pip install -r requirements.txt
+Start command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+There is also a starter blueprint at `backend/render.yaml`. Render provides `PORT` automatically, while local development can keep using:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Set backend environment variables in Render:
+
+```env
+ENV=production
+EMBEDDING_PROVIDER=gemini
+LLM_PROVIDER=gemini
+GOOGLE_API_KEY=your_gemini_api_key
+GEMINI_EMBEDDING_MODEL=gemini-embedding-001
+GEMINI_LLM_MODEL=gemini-2.5-flash
+CHROMA_DIR=./storage/chroma
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001,https://your-vercel-app.vercel.app
+```
+
+`INSTAGRAM_COOKIES_FILE` is optional and only needed if you add cookie-based Instagram extraction later. Do not commit API keys or cookie files.
+
+Render free instances may restart or lose local disk state. Since Chroma is currently stored under `backend/storage/chroma`, vectors may need to be rebuilt by re-analyzing videos after a reset. For production, use persistent disk or move vectors to Qdrant, Pinecone, or Postgres with pgvector.
+
+### Frontend on Vercel
+
+Deploy the `frontend/` folder as the Vercel project root.
+
+Vercel settings:
+
+```text
+Build command: npm run build
+Output: Next.js default
+```
+
+Set this frontend environment variable in Vercel:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://your-render-api.onrender.com
+```
+
+For local development, `frontend/.env.example` uses:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+```
+
+After deploying the frontend, add the Vercel URL to backend `CORS_ORIGINS` on Render.
+
+---
+
 ## Project Structure
 
 ```text
